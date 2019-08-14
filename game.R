@@ -2,6 +2,8 @@
 X = 10
 Y = X
 C = X * Y
+NUM_SIMULATION = 10000
+UID = 2017310711
 # use S3 class to create the board object
 # dictionary object, key is ladder start
 ladders = c(38,14,31,42,44,67,84,91,100)
@@ -64,7 +66,7 @@ play_cl = function(n_players=1, spinner){
             num_turns[[i]] = num_turns[[i]] + 1
             if(current_pos[[i]] + move_step < C)
                 current_pos[[i]] = current_pos[[i]] + move_step            
-            else if(current_pos[[i]] == C){
+            else if(current_pos[[i]] + move_step == C){
                 game_end = TRUE
                 winner = i
                 break
@@ -92,5 +94,48 @@ play_cl = function(n_players=1, spinner){
     output_list$turns = num_turns
     output_list$chutes = chutes
     output_list$ladders = ladders
+    output_list
+}
+get_minimum_turns = function(results){
+    min_turns = Inf
+    for(i in 1:NUM_SIMULATION){
+        min_turns_tmp = min(results[[i]]$turns)
+        if(min_turns_tmp < min_turns)
+            min_turns = min_turns_tmp
+    }
+    min_turns
+}
+get_win_proportions = function(results){
+    proportions = numeric(length(results[[1]]$turns))
+    for(i in 1:NUM_SIMULATION){
+        winner = results[[i]]$winner
+        proportions[[winner]] = proportions[[winner]] + 1 
+    }
+    proportions = proportions / NUM_SIMULATION
+    proportions
+}
+get_proportions_games_end_in_turns = function(turn_num){
+    game_num = 0
+    for(i in 1:NUM_SIMULATION){
+        min_turns_tmp = min(results[[i]]$turns)
+        if(min_turns_tmp == turn_num)
+            game_num = game_num + 1
+    }
+    game_num/NUM_SIMULATION
+}
+standard_game_1 = function(){
+    # using list of list to store elements
+    set.seed(UID)
+    results = list()
+    for(i in 1:NUM_SIMULATION){
+        results[[i]] = play_cl(1, 6)
+    }
+    output_list = list()
+    # a)
+    output_list$min_turns = get_minimum_turns(results)
+    # b)
+    output_list$win_proportions = get_win_proportions(results)
+    # c)
+    output_list$min_proportions = get_proportions_games_end_in_turns(output_list$min_turns)
     output_list
 }
