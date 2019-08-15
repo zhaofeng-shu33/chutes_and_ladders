@@ -1,19 +1,20 @@
 # global parameters, should not be changed 
-X = 10
-Y = X
-C = X * Y
 NUM_SIMULATION = 10000
 UID = 2017310711
-# use S3 class to create the board object
-make_board = function(){
-}
-# dictionary object, key is ladder start
 
-ladders = c(38,14,31,42,44,67,84,91,100)
-names(ladders) = c(1,4,9,21,36,51,28,71,80)
-chuntes = c(6,11,26,19,60,53,24,73,75,78)
-names(chuntes) = c(16,49,47,62,64,56,87,92,95,98)
-board = list(ladders=ladders, chuntes=chuntes, X=X,Y=Y,C=C)
+# make the original board object
+make_board = function(){
+    X = 10
+    Y = X
+    C1 = X * Y
+    # dictionary object, key is ladder start
+    ladders = c(38,14,31,42,44,67,84,91,100)
+    names(ladders) = c(1,4,9,21,36,51,28,71,80)
+    chuntes = c(6,11,26,19,60,53,24,73,75,78)
+    names(chuntes) = c(16,49,47,62,64,56,87,92,95,98)
+    board = list(ladders=ladders, chuntes=chuntes, X=X,Y=Y,C=C1)
+    board
+}
 
 get_coordinate = function(num){
     # get the center coordinate of the point
@@ -26,6 +27,7 @@ get_coordinate = function(num){
         x_value = 10 - (x_offset + 0.5)
     c(x_value, y_value)
 }
+
 draw_arrow = function(list_obj, color){
     x0_list = c()
     y0_list = c()
@@ -43,9 +45,10 @@ draw_arrow = function(list_obj, color){
     }
     arrows(x0_list, y0_list, x1_list, y1_list, col=color)
 }
+
 show_board = function(board){
     plot.new()
-    plot.window(xlim=c(0,X), ylim=c(0,Y))
+    plot.window(xlim=c(0,board$X), ylim=c(0,board$Y))
     box()
     par(xaxp=c(0,10,10))
     par(yaxp=c(0,10,10))
@@ -54,7 +57,8 @@ show_board = function(board){
     draw_arrow(board$ladders, '#FFAC33')
     draw_arrow(board$chuntes, '#FF0000')
 }
-play_cl = function(n_players=1, spinner){
+
+play_cl = function(board, n_players=1, spinner){
     inner_spinner = spinner
     if(length(spinner) == 1)
         inner_spinner = 1:spinner
@@ -67,9 +71,9 @@ play_cl = function(n_players=1, spinner){
         for(i in 1:n_players){
             move_step = sample(inner_spinner, 1)
             num_turns[[i]] = num_turns[[i]] + 1
-            if(current_pos[[i]] + move_step < C)
+            if(current_pos[[i]] + move_step < board$C)
                 current_pos[[i]] = current_pos[[i]] + move_step            
-            else if(current_pos[[i]] + move_step == C){
+            else if(current_pos[[i]] + move_step == board$C){
                 game_end = TRUE
                 winner = i
                 break
@@ -79,7 +83,7 @@ play_cl = function(n_players=1, spinner){
             if(pos_str %in% names(board$ladders)){
                 current_pos[[i]] = board$ladders[[pos_str]]
                 ladders[[i]] = ladders[[i]] + 1
-                if(current_pos[[i]] == C){
+                if(current_pos[[i]] == board$C){
                     game_end = TRUE
                     winner = i
                     break
@@ -98,7 +102,9 @@ play_cl = function(n_players=1, spinner){
     output_list$chutes = chutes
     output_list$ladders = ladders
     output_list$current_pos = current_pos
+    output_list
 }
+
 get_minimum_turns = function(results){
     min_turns = Inf
     for(i in 1:NUM_SIMULATION){
@@ -108,6 +114,7 @@ get_minimum_turns = function(results){
     }
     min_turns
 }
+
 get_win_proportions = function(results){
     proportions = numeric(length(results[[1]]$turns))
     for(i in 1:NUM_SIMULATION){
@@ -117,7 +124,8 @@ get_win_proportions = function(results){
     proportions = proportions / NUM_SIMULATION
     proportions
 }
-get_proportions_games_end_in_turns = function(turn_num){
+
+get_proportions_games_end_in_turns = function(results, turn_num){
     game_num = 0
     for(i in 1:NUM_SIMULATION){
         min_turns_tmp = min(results[[i]]$turns)
@@ -126,10 +134,11 @@ get_proportions_games_end_in_turns = function(turn_num){
     }
     game_num/NUM_SIMULATION
 }
+
 is_capatable_win = function(board, current_pos, spinner){
     # spinner should be a vector of numeric
     for(i in spinner){
-        if(current_pos + i == C)
+        if(current_pos + i == board$C)
             return(TRUE)
     }
     # check if a ladder exists whose terminal is at C
@@ -149,14 +158,14 @@ is_capatable_win = function(board, current_pos, spinner){
         if(current_pos + i == special_ladder_start_pos)
             return(TRUE)
     }
-    return(FALSE)
-    
+    return(FALSE) 
 }
-get_close_proportions = function(results, spinner){
+
+get_close_proportions = function(board, results, spinner){
     game_num = 0
     for(i in 1:NUM_SIMULATION){
         for(j in results$current_pos){
-            if(j == C)
+            if(j == board$C)
                 continue
             if(is_capatable_win(board, j, spinner)){
                 game_num = game_num + 1
@@ -166,13 +175,15 @@ get_close_proportions = function(results, spinner){
     }
     game_num/NUM_SIMULATION
 }
+
 standard_game_1 = function(){
     # using list of list to store elements
     set.seed(UID)
     results = list()
     spinner = 1:6
+    board = make_board()
     for(i in 1:NUM_SIMULATION){
-        results[[i]] = play_cl(1, spinner)
+        results[[i]] = play_cl(board, 1, spinner)
     }
     output_list = list()
     # a)
@@ -180,9 +191,9 @@ standard_game_1 = function(){
     # b)
     output_list$win_proportions = get_win_proportions(results)
     # c)
-    output_list$min_proportions = get_proportions_games_end_in_turns(output_list$min_turns)
+    output_list$min_proportions = get_proportions_games_end_in_turns(results, output_list$min_turns)
     # d)
-    output_list$close_proportions = get_close_proportions(results, spinner)
+    output_list$close_proportions = get_close_proportions(board, results, spinner)
 
     output_list
 }
