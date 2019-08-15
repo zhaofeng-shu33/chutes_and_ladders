@@ -1,7 +1,7 @@
 # global parameters, should not be changed 
 NUM_SIMULATION = 10000
 UID = 2017310711
-
+UID_Reverse = 1170137102
 # make the original board object
 make_board = function(){
     X = 10
@@ -63,6 +63,7 @@ play_cl = function(board, n_players=1, spinner){
     if(length(spinner) == 1)
         inner_spinner = 1:spinner
     current_pos = numeric(n_players)
+    sixth_pos = numeric(n_players)
     num_turns = numeric(n_players)
     chutes = numeric(n_players)
     ladders = numeric(n_players)
@@ -74,6 +75,7 @@ play_cl = function(board, n_players=1, spinner){
             if(current_pos[[i]] + move_step < board$C)
                 current_pos[[i]] = current_pos[[i]] + move_step            
             else if(current_pos[[i]] + move_step == board$C){
+                current_pos[[i]] = board$C
                 game_end = TRUE
                 winner = i
                 break
@@ -93,7 +95,11 @@ play_cl = function(board, n_players=1, spinner){
             else if(pos_str %in% names(board$chuntes)){
                 current_pos[[i]] = board$chuntes[[pos_str]]
                 chutes[[i]] = chutes[[i]] + 1             
-            }                                        
+            } 
+            # store the 6th turn pos results      
+            if(num_turns[[i]] == 6){
+                sixth_pos[[i]] = current_pos[[i]]
+            }                                 
         }
     }
     output_list = list()
@@ -102,6 +108,7 @@ play_cl = function(board, n_players=1, spinner){
     output_list$chutes = chutes
     output_list$ladders = ladders
     output_list$current_pos = current_pos
+    output_list$sixth_pos = sixth_pos
     output_list
 }
 
@@ -144,7 +151,7 @@ is_capatable_win = function(board, current_pos, spinner){
     # check if a ladder exists whose terminal is at C
     has_special_ladder = FALSE
     for(i in names(board$ladders)){
-        if(board$ladders[[i]] == C){
+        if(board$ladders[[i]] == board$C){
             has_special_ladder = TRUE
             special_ladder_start_pos = as.numeric(i)
             break
@@ -164,9 +171,9 @@ is_capatable_win = function(board, current_pos, spinner){
 get_close_proportions = function(board, results, spinner){
     game_num = 0
     for(i in 1:NUM_SIMULATION){
-        for(j in results$current_pos){
+        for(j in results[[i]]$current_pos){
             if(j == board$C)
-                continue
+                next
             if(is_capatable_win(board, j, spinner)){
                 game_num = game_num + 1
                 break
@@ -176,14 +183,33 @@ get_close_proportions = function(board, results, spinner){
     game_num/NUM_SIMULATION
 }
 
-standard_game_1 = function(){
-    # using list of list to store elements
-    set.seed(UID)
-    results = list()
-    spinner = 1:6
-    board = make_board()
+get_maximum_turns = function(results){
+    max_turns = 0
     for(i in 1:NUM_SIMULATION){
-        results[[i]] = play_cl(board, 1, spinner)
+        max_turns_tmp = min(results[[i]]$turns)
+        if(max_turns_tmp > max_turns)
+            max_turns = max_turns_tmp
+    }
+    max_turns
+}
+
+get_most_likely_pos = function(results){
+    n_player = length(results[[1]]$turns)
+    pos = numeric(n_player)    
+    for(i in 1:n_player){
+        # collect pos for i-th player
+        pos_list = c()
+        for(j in 1:NUM_SIMULATION){
+            pos_list = c(pos_list, results[[j]]$sixth_pos[[i]])
+        }        
+        pos[[i]] = as.numeric(names(which.max(table(pos_list))))
+    }
+    pos
+}
+get_simulation_results = function(board, num_player, spinner){
+    results = list()
+    for(i in 1:NUM_SIMULATION){
+        results[[i]] = play_cl(board, num_player, spinner)
     }
     output_list = list()
     # a)
@@ -194,6 +220,77 @@ standard_game_1 = function(){
     output_list$min_proportions = get_proportions_games_end_in_turns(results, output_list$min_turns)
     # d)
     output_list$close_proportions = get_close_proportions(board, results, spinner)
+    # e)
+    output_list$max_turns = get_maximum_turns(results)
+    # f)
+    output_list$sixth_pos = get_most_likely_pos(results)
+    # original simulation results
+    output_list$results = results
 
     output_list
 }
+
+standard_game_1 = function(){
+    # using list of list to store elements
+    set.seed(UID)    
+    spinner = 1:6
+    num_player = 1
+    board = make_board()
+    get_simulation_results(board, num_player, spinner)    
+}
+
+standard_game_2 = function(){
+    # using list of list to store elements
+    set.seed(UID_Reverse)    
+    spinner = 1:6
+    num_player = 2
+    board = make_board()
+    get_simulation_results(board, num_player, spinner)    
+}
+
+standard_game_3 = function(){
+    # using list of list to store elements
+    set.seed(sample(1e4, 1))    
+    spinner = 1:6
+    num_player = 3
+    board = make_board()
+    get_simulation_results(board, num_player, spinner)    
+}
+
+calculate_proportion_less = function(results, num){
+    num = 0
+    for(i in 1:NUM_SIMULATION){
+        total_turn = sum(results[[i]]$turns)
+        if(total_turn < num)
+            num = num + 1
+    }
+    num/NUM_SIMULATION
+}
+
+standard_game_routine = function(){
+    result_1 = standard_game_1()
+    result_2 = standard_game_2()
+    result_3 = standard_game_3()
+    plot_distribution_turns(result_1$results, result_2$results, result_3$results)
+    prop = calculate_proportion_less(result_3$results, result_1$max_turns)
+}
+
+get_turn_list = function(results){
+    turns = c()
+    for(i in 1:NUM_SIMULATION){
+        turns = c(turns, max(results[[i]]$turns))
+    }
+    turns
+}
+
+plot_distribution_turns = function(results_1, results_2, results_3){
+    results_1_turn = get_turn_list(results_1)        
+    results_2_turn = get_turn_list(results_2)        
+    results_3_turn = get_turn_list(results_3)      
+    plot.new()  
+    plot(table(results_1_turn), type='l', col='FF0000')
+    plot(table(results_2_turn), type='l', col='0000FF')
+    plot(table(results_3_turn), type='l', col='FFFF00')
+}
+
+# system.time(standard_game_routine())
