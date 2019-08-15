@@ -5,12 +5,15 @@ C = X * Y
 NUM_SIMULATION = 10000
 UID = 2017310711
 # use S3 class to create the board object
+make_board = function(){
+}
 # dictionary object, key is ladder start
+
 ladders = c(38,14,31,42,44,67,84,91,100)
 names(ladders) = c(1,4,9,21,36,51,28,71,80)
 chuntes = c(6,11,26,19,60,53,24,73,75,78)
 names(chuntes) = c(16,49,47,62,64,56,87,92,95,98)
-board = list(ladders=ladders, chuntes=chuntes)
+board = list(ladders=ladders, chuntes=chuntes, X=X,Y=Y,C=C)
 
 get_coordinate = function(num){
     # get the center coordinate of the point
@@ -94,7 +97,7 @@ play_cl = function(n_players=1, spinner){
     output_list$turns = num_turns
     output_list$chutes = chutes
     output_list$ladders = ladders
-    output_list
+    output_list$current_pos = current_pos
 }
 get_minimum_turns = function(results){
     min_turns = Inf
@@ -123,12 +126,53 @@ get_proportions_games_end_in_turns = function(turn_num){
     }
     game_num/NUM_SIMULATION
 }
+is_capatable_win = function(board, current_pos, spinner){
+    # spinner should be a vector of numeric
+    for(i in spinner){
+        if(current_pos + i == C)
+            return(TRUE)
+    }
+    # check if a ladder exists whose terminal is at C
+    has_special_ladder = FALSE
+    for(i in names(board$ladders)){
+        if(board$ladders[[i]] == C){
+            has_special_ladder = TRUE
+            special_ladder_start_pos = as.numeric(i)
+            break
+        }
+    }
+    if(has_special_ladder == FALSE)
+        return(FALSE)
+    if(current_pos > special_ladder_start_pos)
+        return(FALSE)
+    for(i in spinner){
+        if(current_pos + i == special_ladder_start_pos)
+            return(TRUE)
+    }
+    return(FALSE)
+    
+}
+get_close_proportions = function(results, spinner){
+    game_num = 0
+    for(i in 1:NUM_SIMULATION){
+        for(j in results$current_pos){
+            if(j == C)
+                continue
+            if(is_capatable_win(board, j, spinner)){
+                game_num = game_num + 1
+                break
+            }
+        }
+    }
+    game_num/NUM_SIMULATION
+}
 standard_game_1 = function(){
     # using list of list to store elements
     set.seed(UID)
     results = list()
+    spinner = 1:6
     for(i in 1:NUM_SIMULATION){
-        results[[i]] = play_cl(1, 6)
+        results[[i]] = play_cl(1, spinner)
     }
     output_list = list()
     # a)
@@ -137,5 +181,8 @@ standard_game_1 = function(){
     output_list$win_proportions = get_win_proportions(results)
     # c)
     output_list$min_proportions = get_proportions_games_end_in_turns(output_list$min_turns)
+    # d)
+    output_list$close_proportions = get_close_proportions(results, spinner)
+
     output_list
 }
