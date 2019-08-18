@@ -16,7 +16,7 @@ make_board = function(){
     board
 }
 
-get_coordinate = function(num){
+get_coordinate = function(X, num){
     # get the center coordinate of the point
     x_offset = (num - 1)%%X
     y_offset = (num - 1)%/%X
@@ -28,7 +28,7 @@ get_coordinate = function(num){
     c(x_value, y_value)
 }
 
-draw_arrow = function(list_obj, color){
+draw_arrow = function(X, list_obj, color){
     x0_list = c()
     y0_list = c()
     x1_list = c()
@@ -36,8 +36,8 @@ draw_arrow = function(list_obj, color){
     for(i in names(list_obj)){
         xy0 = as.numeric(i)
         xy1 = list_obj[[i]]
-        xy0 = get_coordinate(xy0)
-        xy1 = get_coordinate(xy1)
+        xy0 = get_coordinate(X, xy0)
+        xy1 = get_coordinate(X, xy1)
         x0_list = c(x0_list, xy0[[1]])
         y0_list = c(y0_list, xy0[[2]])
         x1_list = c(x1_list, xy1[[1]])
@@ -50,12 +50,12 @@ show_board = function(board){
     plot.new()
     plot.window(xlim=c(0,board$X), ylim=c(0,board$Y))
     box()
-    par(xaxp=c(0,10,10))
-    par(yaxp=c(0,10,10))
+    par(xaxp=c(0,board$X,board$X))
+    par(yaxp=c(0,board$Y,board$Y))
     axis(1)
     axis(2,panel.first=grid())
-    draw_arrow(board$ladders, '#FFAC33')
-    draw_arrow(board$chuntes, '#FF0000')
+    draw_arrow(board$X, board$ladders, '#FFAC33')
+    draw_arrow(board$X, board$chuntes, '#FF0000')
 }
 
 play_cl = function(board, n_players=1, spinner){
@@ -230,30 +230,24 @@ get_simulation_results = function(board, num_player, spinner){
     output_list
 }
 
-standard_game_1 = function(){
+standard_game_1 = function(board, spinner=6){
     # using list of list to store elements
     set.seed(UID)    
-    spinner = 1:6
     num_player = 1
-    board = make_board()
     get_simulation_results(board, num_player, spinner)    
 }
 
-standard_game_2 = function(){
+standard_game_2 = function(board, spinner=6){
     # using list of list to store elements
     set.seed(UID_Reverse)    
-    spinner = 1:6
     num_player = 2
-    board = make_board()
     get_simulation_results(board, num_player, spinner)    
 }
 
-standard_game_3 = function(){
+standard_game_3 = function(board, spinner=6){
     # using list of list to store elements
     set.seed(sample(1e4, 1))    
-    spinner = 1:6
     num_player = 3
-    board = make_board()
     get_simulation_results(board, num_player, spinner)    
 }
 
@@ -267,10 +261,10 @@ calculate_proportion_less = function(results, num){
     num/NUM_SIMULATION
 }
 
-standard_game_routine = function(){
-    result_1 = standard_game_1()
-    result_2 = standard_game_2()
-    result_3 = standard_game_3()
+game_routine = function(board, spinner=6){
+    result_1 = standard_game_1(board, spinner)
+    result_2 = standard_game_2(board, spinner)
+    result_3 = standard_game_3(board, spinner)
     prop = calculate_proportion_less(result_3$results, result_1$max_turns)
     game_result = list()
     game_result$result_1 = result_1
@@ -297,5 +291,52 @@ plot_distribution_turns = function(game_result){
     lines(table(results_2_turn), type='l', col='#0000FF')
     legend('topright', legend=c('one player', 'two players', 'three players'), col=c('#FF0000', '#0000FF', '#FF8000'), lwd=1)
 }
+
+is_valid_board = function(board){
+  if('chuntes' %in% names(board) == FALSE)
+    return(FALSE)
+  if(toString(board$C) %in% names(board$chuntes))
+    return(FALSE)
+  return(TRUE)  
+}
+
+make_random_board = function(n_rows=10, n_cols=10, n_chuntes=10, n_ladders=9){
+  X = n_rows
+  Y = n_cols
+  C1 = X * Y
+  sample_list = 1:C1
+  board = list(X=X,Y=Y,C=C1)
+  while(is_valid_board(board) == FALSE){
+    # dictionary object, key is ladder start
+    sample_result = sample(sample_list, 2*(n_chuntes + n_ladders))
+    chuntes = c()
+    for(i in 1:n_chuntes){
+      start = sample_result[[2*i-1]]
+      end = sample_result[[2*i]]
+      if(start > end){
+        start = sample_result[[2*i]]
+        end = sample_result[[2*i-1]]
+      }
+      chuntes[[i]] = start
+      names(chuntes)[[i]] = end
+    }
+    ladders = c()
+    sample_result = sample_result[(2*n_chuntes+1):length(sample_result)]
+    for(i in 1:n_ladders){
+      start = sample_result[[2*i-1]]
+      end = sample_result[[2*i]]
+      if(start > end){
+        start = sample_result[[2*i]]
+        end = sample_result[[2*i-1]]
+      }
+      ladders[[i]] = end
+      names(ladders)[[i]] = start
+    }
+    board$ladders=ladders
+    board$chuntes=chuntes
+  }
+  board  
+}
+
 
 # system.time(standard_game_routine())
