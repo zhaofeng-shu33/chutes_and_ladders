@@ -271,8 +271,12 @@ standard_game_routine = function(){
     result_1 = standard_game_1()
     result_2 = standard_game_2()
     result_3 = standard_game_3()
-    plot_distribution_turns(result_1$results, result_2$results, result_3$results)
     prop = calculate_proportion_less(result_3$results, result_1$max_turns)
+    game_result = list()
+    game_result$result_1 = result_1
+    game_result$result_2 = result_2
+    game_result$result_3 = result_3
+    game_result
 }
 
 get_turn_list = function(results){
@@ -283,14 +287,15 @@ get_turn_list = function(results){
     turns
 }
 
-plot_distribution_turns = function(results_1, results_2, results_3){
-    results_1_turn = get_turn_list(results_1)        
-    results_2_turn = get_turn_list(results_2)        
-    results_3_turn = get_turn_list(results_3)      
+plot_distribution_turns = function(game_result){
+    results_1_turn = get_turn_list(game_result$result_1$results)        
+    results_2_turn = get_turn_list(game_result$result_2$results)        
+    results_3_turn = get_turn_list(game_result$result_3$results)      
     plot.new()  
-    plot(table(results_1_turn), type='l', col='FF0000')
-    plot(table(results_2_turn), type='l', col='0000FF')
-    plot(table(results_3_turn), type='l', col='FFFF00')
+    plot(table(results_3_turn), type='l', col='#FF8000', xlab='turns', ylab='times')
+    lines(table(results_1_turn), type='l', col='#FF0000')
+    lines(table(results_2_turn), type='l', col='#0000FF')
+    legend('topright', legend=c('one player', 'two players', 'three players'), col=c('#FF0000', '#0000FF', '#FF8000'), lwd=1)
 }
 
 # system.time(standard_game_routine())
