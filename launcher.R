@@ -1,11 +1,11 @@
 # get the results, omit the plotting routine
 print_game_result <- function(game_result){
-   sprintf('a) %f', game_result$min_turns)
+   print(sprintf('a) %f', game_result$min_turns))
    print('b)')
    print(game_result$win_proportions)
-   sprintf('c) %f', game_result$min_proportions)
-   sprintf('d) %f', game_result$close_proportions)
-   sprintf('e) %f', game_result$max_turns)
+   print(sprintf('c) %f', game_result$min_proportions))
+   print(sprintf('d) %f', game_result$close_proportions))
+   print(sprintf('e) %f', game_result$max_turns))
    print('f)')
    print(game_result$sixth_pos)  
 }
@@ -17,7 +17,7 @@ print_game_routine_result <- function(game_routine_result){
    print_game_result(game_routine_result$result_2)
    print('game 3:')
    print_game_result(game_routine_result$result_3)
-   sprintf('proportion less %f', game_routine_result$prop) 
+   print(sprintf('proportion less %f', game_routine_result$prop))
 }
 
 source('./game.R')
