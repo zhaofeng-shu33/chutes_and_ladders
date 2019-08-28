@@ -10,9 +10,9 @@ make_board = function(){
     # dictionary object, key is ladder start
     ladders = c(38,14,31,42,44,67,84,91,100)
     names(ladders) = c(1,4,9,21,36,51,28,71,80)
-    chuntes = c(6,11,26,19,60,53,24,73,75,78)
-    names(chuntes) = c(16,49,47,62,64,56,87,92,95,98)
-    board = list(ladders=ladders, chuntes=chuntes, X=X,Y=Y,C=C1)
+    chutess = c(6,11,26,19,60,53,24,73,75,78)
+    names(chutess) = c(16,49,47,62,64,56,87,92,95,98)
+    board = list(ladders=ladders, chutess=chutess, X=X,Y=Y,C=C1)
     board
 }
 
@@ -24,7 +24,7 @@ get_coordinate = function(X, num){
     if(y_offset %% 2 == 0)
         x_value = x_offset + 0.5
     else
-        x_value = 10 - (x_offset + 0.5)
+        x_value = X - (x_offset + 0.5)
     c(x_value, y_value)
 }
 
@@ -55,7 +55,7 @@ show_board = function(board){
     axis(1)
     axis(2,panel.first=grid())
     draw_arrow(board$X, board$ladders, '#FFAC33')
-    draw_arrow(board$X, board$chuntes, '#FF0000')
+    draw_arrow(board$X, board$chutess, '#FF0000')
 }
 
 play_cl = function(board, n_players=1, spinner){
@@ -92,8 +92,8 @@ play_cl = function(board, n_players=1, spinner){
                 }                
             }
             # check the chutes
-            else if(pos_str %in% names(board$chuntes)){
-                current_pos[[i]] = board$chuntes[[pos_str]]
+            else if(pos_str %in% names(board$chutess)){
+                current_pos[[i]] = board$chutess[[pos_str]]
                 chutes[[i]] = chutes[[i]] + 1             
             } 
             # store the 6th turn pos results      
@@ -293,14 +293,14 @@ plot_distribution_turns = function(game_result){
 }
 
 is_valid_board = function(board){
-  if('chuntes' %in% names(board) == FALSE)
+  if('chutess' %in% names(board) == FALSE)
     return(FALSE)
-  if(toString(board$C) %in% names(board$chuntes))
+  if(toString(board$C) %in% names(board$chutess))
     return(FALSE)
   return(TRUE)  
 }
 
-make_random_board = function(n_rows=10, n_cols=10, n_chuntes=10, n_ladders=9){
+make_random_board = function(n_rows=10, n_cols=10, n_chutess=10, n_ladders=9){
   X = n_rows
   Y = n_cols
   C1 = X * Y
@@ -308,20 +308,20 @@ make_random_board = function(n_rows=10, n_cols=10, n_chuntes=10, n_ladders=9){
   board = list(X=X,Y=Y,C=C1)
   while(is_valid_board(board) == FALSE){
     # dictionary object, key is ladder start
-    sample_result = sample(sample_list, 2*(n_chuntes + n_ladders))
-    chuntes = c()
-    for(i in 1:n_chuntes){
+    sample_result = sample(sample_list, 2*(n_chutess + n_ladders))
+    chutess = c()
+    for(i in 1:n_chutess){
       start = sample_result[[2*i-1]]
       end = sample_result[[2*i]]
       if(start > end){
         start = sample_result[[2*i]]
         end = sample_result[[2*i-1]]
       }
-      chuntes[[i]] = start
-      names(chuntes)[[i]] = end
+      chutess[[i]] = start
+      names(chutess)[[i]] = end
     }
     ladders = c()
-    sample_result = sample_result[(2*n_chuntes+1):length(sample_result)]
+    sample_result = sample_result[(2*n_chutess+1):length(sample_result)]
     for(i in 1:n_ladders){
       start = sample_result[[2*i-1]]
       end = sample_result[[2*i]]
@@ -333,7 +333,7 @@ make_random_board = function(n_rows=10, n_cols=10, n_chuntes=10, n_ladders=9){
       names(ladders)[[i]] = start
     }
     board$ladders=ladders
-    board$chuntes=chuntes
+    board$chutess=chutess
   }
   board  
 }
