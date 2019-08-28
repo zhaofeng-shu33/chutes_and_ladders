@@ -1,0 +1,7 @@
+os: linux
+addons:
+  apt:
+    packages:
+      - r-base
+script:
+  - R launcher.R
