@@ -4,4 +4,4 @@ addons:
     packages:
       - r-base
 script:
-  - R launcher.R
+  - Rscript launcher.R
